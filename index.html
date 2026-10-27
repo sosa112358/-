@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#f5f3ed">
+    <title>カードゲーム得点帳</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="app.js" defer></script>
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="page-header">
+        <div>
+          <p class="eyebrow">CARD GAME SCOREBOOK</p>
+          <h1>カードゲーム得点帳</h1>
+          <p class="intro">遊ぶゲームを選んで、ルールやスコアを確認しましょう。</p>
+        </div>
+      </header>
+
+      <nav class="game-tabs" aria-label="ゲームを選択">
+        <button class="game-tab is-active" type="button" data-game="hanajong" aria-pressed="true">華雀</button>
+        <button class="game-tab" type="button" data-game="neu" aria-pressed="false">Neu</button>
+        <button class="game-tab" type="button" data-game="last-continue" aria-pressed="false">Last continue</button>
+        <button class="game-tab" type="button" data-game="direct" aria-pressed="false">DIRECT</button>
+        <button class="game-tab" type="button" data-game="supply-collapse" aria-pressed="false">供給崩壊</button>
+      </nav>
+
+      <section class="game-panel" id="game-panel" aria-live="polite"></section>
+    </main>
+  </body>
+</html>
