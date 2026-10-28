@@ -499,22 +499,81 @@ h1 {
   box-shadow: 0 2px 0 #e1e9df;
 }
 
-.selected-tile.pon-selected-tile {
-  border: 2px solid #c85b2d;
-  background: #fff4ed;
-  box-shadow: 0 2px 0 #edc4ae;
+.open-meld-area {
+  display: grid;
+  justify-items: start;
+  gap: 8px;
+  margin: 12px 0;
+  padding: 10px 12px;
+  border: 1px solid #d8ddd2;
+  border-radius: 10px;
+  background: #f8faf6;
 }
 
-.pon-tile-badge {
-  display: inline-block;
-  margin-top: 3px;
-  padding: 1px 5px;
-  border-radius: 999px;
-  background: #c85b2d;
-  color: #fff;
-  font-size: 0.62rem;
+.open-meld-heading {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.open-meld-heading strong {
+  color: var(--ink);
+}
+
+.open-pon-meld {
+  display: flex;
+  align-items: end;
+  gap: 4px;
+  min-height: 74px;
+  padding: 6px 8px;
+  border: 1px solid #d8ddd2;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.open-pon-tile {
+  display: block;
+  padding: 3px;
+  border: 1px solid #a8bea8;
+  border-radius: 5px;
+  background: #fff;
+}
+
+.open-pon-tile .tile-face img {
+  width: 34px;
+}
+
+.open-pon-tile .tile-face-label {
+  font-size: 0.65rem;
+}
+
+.open-pon-tile.called-tile {
+  transform: rotate(90deg);
+  transform-origin: center bottom;
+}
+
+.small-button {
+  min-height: 28px;
+  padding: 3px 8px;
+  border: 1px solid #d9ded4;
+  border-radius: 6px;
+  background: #fff;
+  color: var(--muted);
+  font-size: 0.72rem;
+}
+
+.pon-mode-button.is-active {
+  border-color: #557d5f;
+  background: #eaf2e9;
+  color: var(--green-dark);
   font-weight: 800;
-  line-height: 1.4;
+}
+
+.pon-mode-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
 }
 
 .tile-quantity {
@@ -681,8 +740,8 @@ h1 {
 
 .card-gallery {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 14px;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 12px;
   margin: 14px 0 18px;
 }
 
@@ -758,6 +817,112 @@ h1 {
 
 .score-section {
   margin-top: 24px;
+  padding: 17px;
+}
+
+.score-section .input-group {
+  margin-top: 12px;
+  padding: 8px 11px 11px;
+}
+
+.score-section .calculator-grid {
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.score-section .calculator-grid label {
+  gap: 5px;
+  font-size: 0.76rem;
+}
+
+.score-section .calculator-grid .text-input {
+  height: 36px;
+  padding: 0 8px;
+  font-size: 0.86rem;
+}
+
+.score-section .context-options {
+  gap: 8px 14px;
+  margin-top: 12px;
+  padding: 9px 11px;
+}
+
+.score-section .context-options label {
+  font-size: 0.76rem;
+}
+
+.score-section .tile-picker {
+  margin-top: 16px;
+  padding-top: 14px;
+}
+
+.score-section .selected-hand {
+  grid-template-columns: repeat(auto-fill, minmax(52px, 1fr));
+  gap: 6px;
+  min-height: 64px;
+  margin-bottom: 10px;
+  padding: 8px;
+}
+
+.score-section .selected-tile {
+  min-height: 84px;
+  padding: 3px;
+}
+
+.score-section .tile-family-grid {
+  grid-template-columns: repeat(auto-fill, minmax(66px, 1fr));
+  gap: 6px;
+}
+
+.score-section .palette-tile {
+  min-height: 96px;
+  padding: 4px 2px;
+}
+
+.score-section .tile-face img {
+  width: min(100%, 46px);
+}
+
+.score-section .tile-face-label {
+  font-size: 0.74rem;
+}
+
+.score-section .tile-picker-actions {
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.score-section .tile-picker-actions .secondary-button {
+  min-height: 32px;
+  padding-inline: 9px;
+  font-size: 0.72rem;
+}
+
+.score-section .open-meld-area {
+  gap: 6px;
+  margin: 9px 0;
+  padding: 8px 10px;
+}
+
+.score-section .open-pon-tile .tile-face img {
+  width: 30px;
+}
+
+.score-section .score-result {
+  gap: 10px;
+  padding: 14px;
+}
+
+.score-section .score-metric > strong {
+  font-size: 1.25rem;
+}
+
+.score-section .score-metric .han-total {
+  font-size: clamp(1.75rem, 5vw, 2.35rem);
+}
+
+.score-section .score-payments {
+  padding: 9px 11px;
 }
 
 .round-entry {
@@ -1044,6 +1209,10 @@ h1 {
     padding: 16px;
   }
 
+  .score-section {
+    padding: 13px;
+  }
+
   .rules-card,
   .details-content {
     font-size: 0.98rem;
@@ -1089,8 +1258,8 @@ h1 {
   }
 
   .card-gallery {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 10px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
   }
 
   .hanajong-art-gallery {
@@ -1099,20 +1268,21 @@ h1 {
   }
 
   .illustrated-card-copy {
-    padding: 13px 14px 15px;
+    padding: 8px 9px 10px;
   }
 
   .illustrated-card-copy h4 {
-    font-size: 0.98rem;
+    font-size: 0.82rem;
   }
 
   .illustrated-card-copy p {
-    font-size: 0.92rem;
+    font-size: 0.72rem;
+    line-height: 1.5;
   }
 
   .illustrated-card figcaption {
-    padding: 10px;
-    font-size: 0.92rem;
+    padding: 7px 6px;
+    font-size: 0.74rem;
   }
 
   .tile-family-grid {
@@ -1145,6 +1315,10 @@ h1 {
 
   .content-card {
     padding: 13px;
+  }
+
+  .score-section {
+    padding: 11px;
   }
 
   .calculator-grid {
