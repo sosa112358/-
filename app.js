@@ -531,11 +531,12 @@ function renderTilePicker() {
                 const count = tileCounts[tile.id] ?? 0;
                 const concealedCount = selectedHand.filter((selectedTileId) => selectedTileId === tile.id).length;
                 const currentPonCount = ponTileIds.filter((ponTileId) => ponTileId === tile.id).length * 3 + kanTileIds.filter((kanTileId) => kanTileId === tile.id).length * 4 + ankanTileIds.filter((ankanTileId) => ankanTileId === tile.id).length * 4;
+                const currentTileCount = concealedCount + currentPonCount;
                 const canMoveTriplet = ponInputMode && concealedCount >= 3 && currentPonCount === 0;
                 const canEnterPon = ponInputMode && selectedHand.length <= concealedTarget - 3 && count <= 1;
-                const canMoveQuad = kanInputMode && concealedCount >= 3 && currentPonCount === 0;
-                const canEnterKan = kanInputMode && (ponTileIds.includes(tile.id) || (concealedCount === 0 && selectedHand.length <= concealedTarget - 3));
-                const canMoveAnkan = ankanInputMode && concealedCount >= 4 && currentPonCount === 0;
+                const canMoveQuad = kanInputMode && concealedCount === 3 && currentTileCount === 3;
+                const canEnterKan = kanInputMode && (ponTileIds.includes(tile.id) || (currentTileCount === 0 && selectedHand.length <= concealedTarget - 3));
+                const canMoveAnkan = ankanInputMode && concealedCount === 4 && currentTileCount === 4;
                 const canEnterAnkan = ankanInputMode && concealedCount === 0 && selectedHand.length <= concealedTarget - 3;
                 const disabled = (ponInputMode || kanInputMode || ankanInputMode)
                   ? (ponInputMode ? !(canMoveTriplet || canEnterPon) : kanInputMode ? !(canMoveQuad || canEnterKan) : !(canMoveAnkan || canEnterAnkan))
@@ -630,19 +631,23 @@ function updateTilePicker() {
     button.addEventListener("click", () => {
       const tileId = button.dataset.addTile;
       const count = selectedHand.filter((selectedTileId) => selectedTileId === tileId).length;
+      const meldTileCount = ponTileIds.filter((id) => id === tileId).length * 3
+        + kanTileIds.filter((id) => id === tileId).length * 4
+        + ankanTileIds.filter((id) => id === tileId).length * 4;
+      const totalTileCount = count + meldTileCount;
       if (kanInputMode) {
         const ponIndex = ponTileIds.indexOf(tileId);
-        if (ponIndex >= 0) {
+        if (ponIndex >= 0 && totalTileCount === 3) {
           ponTileIds.splice(ponIndex, 1);
           kanTileIds.push(tileId);
-        } else if (count >= 3) {
+        } else if (count === 3 && totalTileCount === 3) {
           const indices = selectedHand.flatMap((id, index) => id === tileId ? [index] : []).slice(0, 3);
           const removedBeforeWinningTile = indices.filter((index) => index < winningTileIndex).length;
           if (indices.includes(winningTileIndex)) winningTileIndex = null;
           else if (winningTileIndex !== null) winningTileIndex -= removedBeforeWinningTile;
           selectedHand = selectedHand.filter((_, index) => !indices.includes(index));
           kanTileIds.push(tileId);
-        } else if (count === 0 && selectedHand.length <= maxHandSize - (ponTileIds.length + kanTileIds.length + ankanTileIds.length) * 3 - 3) {
+        } else if (totalTileCount === 0 && selectedHand.length <= maxHandSize - (ponTileIds.length + kanTileIds.length + ankanTileIds.length) * 3 - 3) {
           kanTileIds.push(tileId);
         } else return;
         kanInputMode = false;
@@ -650,14 +655,14 @@ function updateTilePicker() {
         return;
       }
       if (ankanInputMode) {
-        if (count >= 4) {
+        if (count === 4 && totalTileCount === 4) {
           const indices = selectedHand.flatMap((id, index) => id === tileId ? [index] : []).slice(0, 4);
           const removedBeforeWinningTile = indices.filter((index) => index < winningTileIndex).length;
           if (indices.includes(winningTileIndex)) winningTileIndex = null;
           else if (winningTileIndex !== null) winningTileIndex -= removedBeforeWinningTile;
           selectedHand = selectedHand.filter((_, index) => !indices.includes(index));
           ankanTileIds.push(tileId);
-        } else if (count === 0 && selectedHand.length <= maxHandSize - (ponTileIds.length + kanTileIds.length + ankanTileIds.length) * 3 - 3) {
+        } else if (totalTileCount === 0 && selectedHand.length <= maxHandSize - (ponTileIds.length + kanTileIds.length + ankanTileIds.length) * 3 - 3) {
           ankanTileIds.push(tileId);
         } else return;
         ankanInputMode = false;
