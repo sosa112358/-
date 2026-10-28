@@ -492,16 +492,16 @@ function renderTilePicker() {
         <h4>手牌を選ぶ <span class="tile-count">${selectedHand.length}/${concealedTarget}枚${meldCount ? `（面子${meldCount}組・合計${selectedHand.length + ponTileIds.length * 3 + kanTileIds.length * 4 + ankanTileIds.length * 4}枚）` : ""}</span></h4>
         <p class="section-description">牌を押して手牌に追加します。「和了牌」で最後に引いた牌を指定できます。</p>
       </div>
-      <div class="selected-hand" aria-label="選択中の手牌">
-        ${selectedHand.length
-          ? selectedHand.map((tileId, index) => {
-              const tile = hanajongTiles.find((item) => item.id === tileId);
-              return `<span class="selected-tile-group"><button class="tile-button selected-tile" type="button" data-remove-tile="${index}" aria-label="${tile.label}を手牌から取り除く">${renderTileFace(tile)}</button><button class="winning-tile-toggle ${winningTileIndex === index ? "is-selected" : ""}" type="button" data-win-tile="${index}" aria-pressed="${winningTileIndex === index}">和了牌</button></span>`;
-            }).join("")
-          : `<span class="hand-placeholder">ここに選んだ牌が並びます</span>`}
-      </div>
-      <div class="open-meld-area" aria-label="面子の入力">
-        <div class="open-meld-heading"><strong>面子</strong><span>${meldCount ? `ポン${ponTileIds.length}組・明槓${kanTileIds.length}組・暗槓${ankanTileIds.length}組` : "なし"}</span></div>
+      <div class="hand-display-row" aria-label="手牌とポン・槓">
+        <div class="selected-hand" aria-label="選択中の手牌">
+          ${selectedHand.length
+            ? selectedHand.map((tileId, index) => {
+                const tile = hanajongTiles.find((item) => item.id === tileId);
+                return `<span class="selected-tile-group"><button class="tile-button selected-tile" type="button" data-remove-tile="${index}" aria-label="${tile.label}を手牌から取り除く">${renderTileFace(tile)}</button><button class="winning-tile-toggle ${winningTileIndex === index ? "is-selected" : ""}" type="button" data-win-tile="${index}" aria-pressed="${winningTileIndex === index}">和了牌</button></span>`;
+              }).join("")
+            : `<span class="hand-placeholder">ここに選んだ牌が並びます</span>`}
+        </div>
+        <div class="hand-melds" aria-label="登録したポン・槓">
         ${ponTileIds.map((tileId, meldIndex) => {
           const ponTile = hanajongTiles.find((tile) => tile.id === tileId);
           return `<div class="open-pon-meld" aria-label="${escapeHtml(ponTile.label)}をポンした3枚">${Array.from({ length: 3 }, (_, index) => `<span class="open-pon-tile ${index === 2 ? "called-tile" : ""}">${renderTileFace(ponTile)}</span>`).join("")}<button class="small-button" data-clear-pon="${meldIndex}" type="button" aria-label="このポンを解除">解除</button></div>`;
@@ -514,6 +514,9 @@ function renderTilePicker() {
           const kanTile = hanajongTiles.find((tile) => tile.id === tileId);
           return `<div class="open-pon-meld open-kan-meld concealed-kan-meld" aria-label="${escapeHtml(kanTile.label)}の暗槓・門前">${Array.from({ length: 4 }, (_, index) => index === 0 || index === 3 ? `<span class="kan-tile-back" aria-label="伏せ牌">裏</span>` : `<span class="open-pon-tile">${renderTileFace(kanTile)}</span>`).join("")}<span class="kan-kind-label">暗槓・門前</span><button class="small-button" data-clear-ankan="${meldIndex}" type="button" aria-label="この暗槓を解除">解除</button></div>`;
         }).join("")}
+        </div>
+      </div>
+      <div class="open-meld-controls">
         <div class="open-meld-actions">
           <button class="secondary-button pon-mode-button ${ponInputMode ? "is-active" : ""}" id="pon-mode" type="button" aria-pressed="${ponInputMode}" ${meldCount >= 3 ? "disabled" : ""}>${ponInputMode ? "ポンする牌を選択中" : "ポンを追加"}</button>
           <button class="secondary-button pon-mode-button ${kanInputMode ? "is-active" : ""}" id="kan-mode" type="button" aria-pressed="${kanInputMode}" ${meldCount >= 3 ? "disabled" : ""}>${kanInputMode ? "明槓する牌を選択中" : "明槓を追加"}</button>
@@ -881,7 +884,7 @@ function calculateRoundResult() {
   const akaDoraCount = Number(panel.querySelector("#aka-dora-count")?.value ?? 0);
   const rawHan = baseHan + doraCount + uraDoraCount + akaDoraCount;
   const yakumanMultiplier = analysis.yakuman || (rawHan >= 13 ? 1 : 0);
-  const han = yakumanMultiplier ? 13 : Math.min(13, rawHan);
+  const han = yakumanMultiplier ? 13 * yakumanMultiplier : Math.min(13, rawHan);
   const yaku = [...analysis.yaku];
   if (rawHan >= 13 && !analysis.yakuman) yaku.push(["数え役満", "役満"]);
   const scoreRow = hanajongPayments.at(-1);
@@ -890,7 +893,7 @@ function calculateRoundResult() {
     : hanajongPayments.find((row) => Number(row.label) === han)
       ?? hanajongPayments.find((row) => row.label.split("・").map(Number).includes(han));
 
-  if (!payments || !Number.isSafeInteger(han) || (han < 1 && !yakumanMultiplier) || han > 13) return null;
+  if (!payments || !Number.isSafeInteger(han) || (han < 1 && !yakumanMultiplier) || (han > 13 && !yakumanMultiplier)) return null;
 
   const baseMultiplier = yakumanMultiplier || 1;
   let winningPoints;
@@ -949,7 +952,11 @@ function updateScorePreview() {
     return;
   }
 
-  const yakuSummary = result.yaku.map(([name, value]) => `${escapeHtml(name)}（${escapeHtml(value)}）`).join("、");
+  const hasCountedYakuman = result.yaku.some(([name]) => name === "数え役満");
+  const displayedYaku = result.yakumanMultiplier && !hasCountedYakuman
+    ? result.yaku.filter(([, value]) => ["役満", "ダブル役満", "トリプル役満"].includes(value))
+    : result.yaku;
+  const yakuSummary = displayedYaku.map(([name, value]) => `${escapeHtml(name)}（${escapeHtml(value)}）`).join("、");
   const limitName = result.yakumanMultiplier >= 3 ? "トリプル役満"
     : result.yakumanMultiplier === 2 ? "ダブル役満"
       : result.yakumanMultiplier === 1 ? "役満"
