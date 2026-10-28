@@ -519,7 +519,7 @@ function renderTilePicker() {
           <button class="secondary-button pon-mode-button ${kanInputMode ? "is-active" : ""}" id="kan-mode" type="button" aria-pressed="${kanInputMode}" ${meldCount >= 3 ? "disabled" : ""}>${kanInputMode ? "明槓する牌を選択中" : "明槓を追加"}</button>
           <button class="secondary-button pon-mode-button ${ankanInputMode ? "is-active" : ""}" id="ankan-mode" type="button" aria-pressed="${ankanInputMode}" ${meldCount >= 3 ? "disabled" : ""}>${ankanInputMode ? "暗槓する牌を選択中" : "暗槓を追加"}</button>
         </div>
-        <p class="helper-text">明槓は手牌の同じ牌3枚を選ぶか、ポンした牌を選んで登録します。暗槓は手牌の同じ牌3枚を選び、門前のまま扱います。</p>
+        <p class="helper-text">明槓・暗槓はボタンを押して牌一覧から選ぶだけで登録できます。手牌に同じ牌が明槓なら3枚、暗槓なら4枚あれば自動で移動します。ポン済みの牌は明槓に変更できます。槓の後は嶺上牌を手牌に加えてください。</p>
       </div>
       <div class="tile-picker-actions"><button class="secondary-button" id="clear-hand" type="button" title="Ctrl + Backspace" ${selectedHand.length || meldCount ? "" : "disabled"}>手牌をクリア</button><button class="secondary-button" id="random-hand" type="button" title="Shift + D">和了形をランダム入力</button></div>
       <div class="tile-palette" aria-label="牌一覧">
@@ -534,10 +534,11 @@ function renderTilePicker() {
                 const canMoveTriplet = ponInputMode && concealedCount >= 3 && currentPonCount === 0;
                 const canEnterPon = ponInputMode && selectedHand.length <= concealedTarget - 3 && count <= 1;
                 const canMoveQuad = kanInputMode && concealedCount >= 3 && currentPonCount === 0;
-        const canEnterKan = kanInputMode && ponTileIds.includes(tile.id);
-                const canMoveAnkan = ankanInputMode && concealedCount >= 3 && currentPonCount === 0;
+                const canEnterKan = kanInputMode && (ponTileIds.includes(tile.id) || (concealedCount === 0 && selectedHand.length <= concealedTarget - 3));
+                const canMoveAnkan = ankanInputMode && concealedCount >= 4 && currentPonCount === 0;
+                const canEnterAnkan = ankanInputMode && concealedCount === 0 && selectedHand.length <= concealedTarget - 3;
                 const disabled = (ponInputMode || kanInputMode || ankanInputMode)
-                  ? (ponInputMode ? !(canMoveTriplet || canEnterPon) : kanInputMode ? !(canMoveQuad || canEnterKan) : !canMoveAnkan)
+                  ? (ponInputMode ? !(canMoveTriplet || canEnterPon) : kanInputMode ? !(canMoveQuad || canEnterKan) : !(canMoveAnkan || canEnterAnkan))
                   : count >= 4 || selectedHand.length >= concealedTarget;
                 return `<button class="tile-button palette-tile" type="button" data-add-tile="${tile.id}" aria-label="${tile.label}を手牌に追加、選択済み${count}枚" ${disabled ? "disabled" : ""}>${renderTileFace(tile)}<span class="tile-quantity">${count}/4枚</span></button>`;
               }).join("")}
@@ -641,19 +642,24 @@ function updateTilePicker() {
           else if (winningTileIndex !== null) winningTileIndex -= removedBeforeWinningTile;
           selectedHand = selectedHand.filter((_, index) => !indices.includes(index));
           kanTileIds.push(tileId);
+        } else if (count === 0 && selectedHand.length <= maxHandSize - (ponTileIds.length + kanTileIds.length + ankanTileIds.length) * 3 - 3) {
+          kanTileIds.push(tileId);
         } else return;
         kanInputMode = false;
         updateTilePicker();
         return;
       }
       if (ankanInputMode) {
-        if (count < 3) return;
-        const indices = selectedHand.flatMap((id, index) => id === tileId ? [index] : []).slice(0, 3);
-        const removedBeforeWinningTile = indices.filter((index) => index < winningTileIndex).length;
-        if (indices.includes(winningTileIndex)) winningTileIndex = null;
-        else if (winningTileIndex !== null) winningTileIndex -= removedBeforeWinningTile;
-        selectedHand = selectedHand.filter((_, index) => !indices.includes(index));
-        ankanTileIds.push(tileId);
+        if (count >= 4) {
+          const indices = selectedHand.flatMap((id, index) => id === tileId ? [index] : []).slice(0, 4);
+          const removedBeforeWinningTile = indices.filter((index) => index < winningTileIndex).length;
+          if (indices.includes(winningTileIndex)) winningTileIndex = null;
+          else if (winningTileIndex !== null) winningTileIndex -= removedBeforeWinningTile;
+          selectedHand = selectedHand.filter((_, index) => !indices.includes(index));
+          ankanTileIds.push(tileId);
+        } else if (count === 0 && selectedHand.length <= maxHandSize - (ponTileIds.length + kanTileIds.length + ankanTileIds.length) * 3 - 3) {
+          ankanTileIds.push(tileId);
+        } else return;
         ankanInputMode = false;
         updateTilePicker();
         return;
