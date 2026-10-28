@@ -499,6 +499,24 @@ h1 {
   box-shadow: 0 2px 0 #e1e9df;
 }
 
+.selected-tile.pon-selected-tile {
+  border: 2px solid #c85b2d;
+  background: #fff4ed;
+  box-shadow: 0 2px 0 #edc4ae;
+}
+
+.pon-tile-badge {
+  display: inline-block;
+  margin-top: 3px;
+  padding: 1px 5px;
+  border-radius: 999px;
+  background: #c85b2d;
+  color: #fff;
+  font-size: 0.62rem;
+  font-weight: 800;
+  line-height: 1.4;
+}
+
 .tile-quantity {
   color: var(--muted);
   font-size: 0.66rem;

@@ -485,7 +485,9 @@ function renderTilePicker() {
         ${selectedHand.length
           ? selectedHand.map((tileId, index) => {
               const tile = hanajongTiles.find((item) => item.id === tileId);
-              return `<span class="selected-tile-group"><button class="tile-button selected-tile" type="button" data-remove-tile="${index}" aria-label="${tile.label}を手牌から取り除く">${renderTileFace(tile)}</button><button class="winning-tile-toggle ${winningTileIndex === index ? "is-selected" : ""}" type="button" data-win-tile="${index}" aria-pressed="${winningTileIndex === index}">和了牌</button></span>`;
+              const ponCopyNumber = selectedHand.slice(0, index + 1).filter((selectedTileId) => selectedTileId === tileId).length;
+              const isPonTile = ponTileId === tileId && ponCopyNumber <= 3;
+              return `<span class="selected-tile-group"><button class="tile-button selected-tile ${isPonTile ? "pon-selected-tile" : ""}" type="button" data-remove-tile="${index}" aria-label="${tile.label}${isPonTile ? "、ポンした牌" : ""}を手牌から取り除く">${renderTileFace(tile)}${isPonTile ? '<span class="pon-tile-badge">ポン</span>' : ""}</button><button class="winning-tile-toggle ${winningTileIndex === index ? "is-selected" : ""}" type="button" data-win-tile="${index}" aria-pressed="${winningTileIndex === index}">和了牌</button></span>`;
             }).join("")
           : `<span class="hand-placeholder">ここに選んだ牌が並びます</span>`}
       </div>
