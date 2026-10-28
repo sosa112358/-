@@ -196,19 +196,15 @@ function renderSupplyCollapseRules(game) {
     <div class="panel-heading">
       <div>
         <h2>${escapeHtml(game.name)}</h2>
-        <p>エリアの読み合いとカードで資源を集め、いち早く勝利条件を満たすゲームです。</p>
+        <p>各プレイヤーがエリアを選び、資源を集めたりカードを使ったりしながら全10ターンを進めます。</p>
       </div>
       <span class="game-icon" aria-hidden="true">${escapeHtml(game.icon)}</span>
     </div>
     <div class="content-card rules-card">
       <p><strong>人数:</strong> 2〜4人　<strong>時間:</strong> 15〜30分</p>
       <h3>勝利条件</h3>
-      <ul>
-        <li><strong>完全勝利:</strong> 木・小麦・鉄をそれぞれ2枚集める。</li>
-        <li><strong>技術勝利:</strong> 資源を集めて特殊建築物を完成させる。</li>
-        <li><strong>生き残り勝利:</strong> ほかの全員が脱落または破産する。</li>
-      </ul>
-      <p>いずれかを最初に達成したプレイヤーがその場で勝利します。</p>
+      <p>10ターン終了後、最もポイントが高いプレイヤーの勝ちです。</p>
+      <p class="helper-text">※10ターン終了時のポイント計算方法は、参照したルールブックに記載がありません。</p>
       <h3>ゲームの準備</h3>
       <ol>
         <li>森・畑・鉱山のエリアカードを中央に並べ、各エリアの横に対応する資源カードの山札を置きます。</li>
@@ -217,16 +213,15 @@ function renderSupplyCollapseRules(game) {
       </ol>
       <h3>ターンの流れ</h3>
       <ol>
-        <li><strong>エリア選択:</strong> 全員が森・畑・鉱山・全エリアのいずれかを伏せて出します。</li>
-        <li><strong>公開と判定:</strong> 一斉に公開します。エリアを1人だけ選んだ場合、そのエリアの資源を1枚獲得します。</li>
-        <li><strong>イベントカード:</strong> 一斉公開後、イベントカードの効果を先に処理します。バッティングしていた場合は、戦闘などの処理もここで行います。</li>
-        <li><strong>物資カード:</strong> イベントカードの処理後に物資カードを処理します。エリアを単独で選んだ人は対応する物資を獲得します。同じエリアに複数人が集まった場合は供給崩壊となり、そのエリアの物資は獲得できません。</li>
+        <li><strong>エリア選択:</strong> 全員が森・畑・鉱山・全エリアのいずれかを伏せて出します。全エリアカードは3つの資源エリアすべてを選んだ扱いです。</li>
+        <li><strong>公開と資源獲得:</strong> 全員一斉に公開します。あるエリアを1人だけが選んでいれば、そのエリアの資源を1枚獲得します。</li>
+        <li><strong>供給崩壊:</strong> 同じエリアに複数人が集まった場合、そのエリアの資源は誰も獲得できません。バッティング時に戦闘カードを使うと、該当プレイヤー同士の戦闘になります。3人以上の場合は全員が振り、最も高い出目の人が勝ちます。</li>
       </ol>
       <h3>エリアと資源</h3>
       <ul>
-        <li><strong>森 → 木:</strong> 建築や道具、勝利条件やカードのコストに使います。</li>
-        <li><strong>畑 → 小麦:</strong> 勝利条件に使うほか、交渉材料にもできます。</li>
-        <li><strong>鉱山 → 鉄:</strong> 強力なカードや高レベルの建築に使います。</li>
+        <li><strong>森 → 木:</strong></li>
+        <li><strong>畑 → 小麦</strong></li>
+        <li><strong>鉱山 → 鉄</strong></li>
       </ul>
       <h3>カードと効果</h3>
       <div class="card-gallery" aria-label="ルールブック掲載カード画像">
@@ -237,9 +232,9 @@ function renderSupplyCollapseRules(game) {
           ["image-04-733x1024.jpg", "鉱山", "単独で選ぶと、対応する資源の鉄を1枚獲得できます。"],
           ["image-05-733x1024.jpg", "鉄", "強力なカードや高レベルの建築に使う資源です。"],
           ["image-06-733x1024.jpg", "全エリア選択カード", "木・小麦・鉄の全エリアを選んだ扱いになります。バッティングの危険も高まります。"],
-          ["image-07-733x1024.jpg", "リプレイカード", "ダイス戦闘時に使い、戦闘を2回行います。どちらかで勝てば勝利です。"],
-          ["image-08-733x1024.jpg", "出目＋2カード", "ダイスを振る直前に使い、対象に選んだ1人の次の出目を2増やします。"],
-          ["image-09-733x1024.jpg", "出目－2カード", "ダイスを振る直前に使い、指定した相手1人の次の出目を2減らします。"],
+          ["image-07-733x1024.jpg", "リプレイカード", "ダイスを振る戦闘で使用します。2回振り、どちらかで勝てば勝利です。"],
+          ["image-08-733x1024.jpg", "出目＋2カード", "ダイスを振る戦闘で使用します。自分の次の出目に2を加えます。"],
+          ["image-09-733x1024.jpg", "出目－2カード", "ダイスを振る戦闘で使用します。指定した相手1人の次の出目を2減らします。"],
         ].map(([file, label, description]) => `
           <article class="illustrated-card">
             <img src="pdf-images/${file}" alt="${escapeHtml(label)}" loading="lazy">
@@ -247,15 +242,16 @@ function renderSupplyCollapseRules(game) {
           </article>
         `).join("")}
         <article class="illustrated-card">
-          <img src="pdf-images/battle-card.png" alt="戦闘カード。選んだ相手と戦闘し、勝つと相手の手札をすべて獲得" loading="lazy">
-          <div class="illustrated-card-copy"><h4>戦闘カード</h4><p>相手を1人選んで戦闘します。戦闘中はイベントカードを使えず、お互いサイコロを1回だけ振ります。勝つと、選んだ相手の手札をすべて自分の手札に加えます。</p></div>
+          <img src="pdf-images/battle-card.png" alt="戦闘カード。バッティング時に戦闘を開始し、勝者は相手から資源を1枚奪う" loading="lazy">
+          <div class="illustrated-card-copy"><h4>戦闘カード</h4><p>エリア選択でバッティングしたとき、すぐに戦闘を開始します。勝者は相手1人から資源カードを1枚選んで奪います。</p></div>
         </article>
         <article class="illustrated-card">
-          <img src="pdf-images/steal-card.png" alt="強奪カード。選んだ相手の手札を見て1枚選び、自分の手札に加える" loading="lazy">
-          <div class="illustrated-card-copy"><h4>強奪カード</h4><p>相手1人の手札を見て1枚選び、自分の手札に加えます。</p></div>
+          <img src="pdf-images/steal-card.png" alt="強奪カード。相手の手札または獲得した資源からランダムに1枚奪う" loading="lazy">
+          <div class="illustrated-card-copy"><h4>強奪カード</h4><p>エリア選択に関係なく使用できます。相手1人を選び、その人の手札または獲得した資源からランダムに1枚奪います。失敗時のペナルティ内容はルールブックに記載がありません。</p></div>
         </article>
       </div>
-      <p>3人以上がバッティングした場合は全員でダイスを振り、最も高い出目の人が勝ちます。出目＋2・出目－2はいずれも対象を1人指定します。</p>
+      <h3>カードを使うタイミング</h3>
+      <p>全エリアカードはエリア選択時に出します。リプレイ・出目＋2・出目－2はダイス戦闘で使用し、ダイスを振る前に公開します。ダイスに関するカードは複数枚を同時に使えます。強奪カードはエリア選択に関係なく使えます。</p>
     </div>
   `;
 }
