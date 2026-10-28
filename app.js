@@ -119,6 +119,7 @@ let selectedGame = "hanajong";
 let scoreState = loadScoreState();
 let selectedHand = [];
 let winningTileIndex = null;
+let ponTileId = "";
 
 function loadScoreState() {
   try {
@@ -508,6 +509,27 @@ function renderTilePicker() {
   `;
 }
 
+function getPonCandidates() {
+  const counts = selectedHand.reduce((result, tileId) => {
+    result[tileId] = (result[tileId] ?? 0) + 1;
+    return result;
+  }, {});
+  return hanajongTiles.filter((tile) => (counts[tile.id] ?? 0) >= 3);
+}
+
+function renderPonOptions() {
+  const candidates = getPonCandidates();
+  if (ponTileId && !candidates.some((tile) => tile.id === ponTileId)) ponTileId = "";
+  return `<option value="">なし（門前）</option>${candidates.map((tile) => `<option value="${tile.id}">${escapeHtml(tile.label)}をポン</option>`).join("")}`;
+}
+
+function updatePonOptions() {
+  const select = panel.querySelector("#pon-tile");
+  if (!select) return;
+  select.innerHTML = renderPonOptions();
+  select.value = ponTileId;
+}
+
 function renderTileFace(tile) {
   const number = tile.number ? `<span class="tile-rank">${tile.number}</span>` : "";
   return `<span class="tile-face"><img src="pdf-images/${tile.image}" alt="">${number}<span class="tile-face-label">${escapeHtml(tile.label)}</span></span>`;
@@ -520,11 +542,13 @@ function updateTilePicker() {
   panel.querySelector("#clear-hand")?.addEventListener("click", () => {
     selectedHand = [];
     winningTileIndex = null;
+    ponTileId = "";
     updateTilePicker();
   });
   panel.querySelector("#random-hand")?.addEventListener("click", () => {
     selectedHand = createRandomWinningHand();
     winningTileIndex = selectedHand.length - 1;
+    ponTileId = "";
     updateTilePicker();
   });
   panel.querySelectorAll("[data-add-tile]").forEach((button) => {
@@ -551,6 +575,7 @@ function updateTilePicker() {
       updateTilePicker();
     });
   });
+  updatePonOptions();
   updateScorePreview();
 }
 
@@ -622,12 +647,16 @@ function analyzeHand() {
   const isHonor = (tile) => tile >= 18;
   const rank = (tile) => tile % 9 + 1;
   const isTerminalOrHonor = (tile) => isHonor(tile) || rank(tile) === 1 || rank(tile) === 9;
-  const closed = panel.querySelector("#hand-state")?.value !== "open";
+  const ponTileIndex = ponTileId ? Number(ponTileId.slice(5)) - 1 : null;
   const yakuValues = new Map(hanajongYaku.map(([name, , closedValue, openValue]) => [name, { closedValue, openValue }]));
 
   function evaluate(decomposition) {
     const yaku = new Map();
     let yakuman = 0;
+    const { pair, melds } = decomposition;
+    const ponMeld = ponTileIndex === null ? null : melds.find((meld) => meld.type === "triplet" && meld.tile === ponTileIndex);
+    if (ponTileIndex !== null && !ponMeld) return null;
+    const closed = ponTileIndex === null;
     const add = (name, multiplier = 1) => {
       const value = yakuValues.get(name);
       const han = (closed ? value?.closedValue : value?.openValue) ?? "不可";
@@ -636,7 +665,6 @@ function analyzeHand() {
       else if (han === "トリプル") { yakuman += 3 * multiplier; yaku.set(name, "トリプル役満"); }
       else if (han !== "不可" && Number(han) > 0) yaku.set(name, (yaku.get(name) ?? 0) + Number(han) * multiplier);
     };
-    const { pair, melds } = decomposition;
     const triplets = melds.filter((meld) => meld.type === "triplet");
     const sequences = melds.filter((meld) => meld.type === "sequence");
     const suit = Math.floor((indices.find((item) => item < 18) ?? -9) / 9);
@@ -695,16 +723,17 @@ function analyzeHand() {
     return { yaku, regularHan, yakuman };
   }
 
-  const evaluated = decompositions.map(evaluate);
+  const evaluated = decompositions.map(evaluate).filter(Boolean);
+  if (!evaluated.length) return null;
   const terminalHonorTypes = new Set(indices.filter(isTerminalOrHonor));
-  if (terminalHonorTypes.size === 10 && indices.every(isTerminalOrHonor) && counts.some((count) => count === 2)) {
+  if (ponTileIndex === null && terminalHonorTypes.size === 10 && indices.every(isTerminalOrHonor) && counts.some((count) => count === 2)) {
     evaluated.push({ yaku: new Map([["コクシムソウ", "役満"]]), regularHan: 0, yakuman: 1 });
   }
   for (let suit = 0; suit < 2; suit += 1) {
     const start = suit * 9;
     const isChuuren = counts.slice(start, start + 9).every((count, index) => count === (index === 0 || index === 8 ? 2 : 1))
       && counts.every((count, index) => index >= start && index < start + 9 || count === 0);
-    if (isChuuren) evaluated.push({ yaku: new Map([["チューレンポウトウ", "役満"]]), regularHan: 0, yakuman: 1 });
+    if (ponTileIndex === null && isChuuren) evaluated.push({ yaku: new Map([["チューレンポウトウ", "役満"]]), regularHan: 0, yakuman: 1 });
   }
   if (!evaluated.length) return null;
   evaluated.sort((a, b) => (b.yakuman ? b.yakuman * 100 : b.regularHan) - (a.yakuman ? a.yakuman * 100 : a.regularHan));
@@ -735,24 +764,31 @@ function calculateRoundResult() {
 
   const baseMultiplier = yakumanMultiplier || 1;
   let winningPoints;
-  let paymentDetails;
+  let paymentBreakdown;
   if (winType === "ron") {
     winningPoints = (winnerIsParent ? payments.parentRon : payments.childRon) * baseMultiplier;
-    paymentDetails = `ロンした人から ${formatScore(winningPoints)} 点`;
+    paymentBreakdown = [{ label: "放銃者から", points: winningPoints }];
   } else if (winnerIsParent) {
     const payment = payments.parentTsumo * baseMultiplier;
     winningPoints = payment * 3;
-    paymentDetails = `子3人から各 ${formatScore(payment)} 点`;
+    paymentBreakdown = [
+      { label: "子1人あたり（3人）", points: payment },
+      { label: "合計受取", points: winningPoints, total: true },
+    ];
   } else {
     const parentPayment = payments.childTsumoParent * baseMultiplier;
     const childPayment = payments.childTsumoChild * baseMultiplier;
     winningPoints = parentPayment + childPayment * 2;
-    paymentDetails = `親から ${formatScore(parentPayment)} 点、子2人から各 ${formatScore(childPayment)} 点`;
+    paymentBreakdown = [
+      { label: "親（1人）から", points: parentPayment },
+      { label: "子1人あたり（2人）", points: childPayment },
+      { label: "合計受取", points: winningPoints, total: true },
+    ];
   }
 
   return {
     winningPoints,
-    paymentDetails,
+    paymentBreakdown,
     winType,
     han,
     baseHan,
@@ -797,7 +833,11 @@ function updateScorePreview() {
     <div class="score-result">
       <div class="score-metric han-metric"><span>合計翻数</span><strong class="han-total">${result.han}翻</strong><span class="hand-limit">${limitName}</span></div>
       <div class="score-metric"><span>自分の獲得点</span><strong class="score-positive">${formatScore(result.winningPoints)} 点</strong></div>
-      <p class="helper-text">成立役: ${yakuSummary}。${hanSummary}${result.paymentDetails}</p>
+      <p class="helper-text">成立役: ${yakuSummary}。${hanSummary}</p>
+      <div class="score-payments">
+        <h4>支払い内訳</h4>
+        <ul>${result.paymentBreakdown.map((item) => `<li class="${item.total ? "is-total" : ""}"><span>${escapeHtml(item.label)}</span><strong>${formatScore(item.points)} 点</strong></li>`).join("")}</ul>
+      </div>
     </div>
   `;
 }
@@ -943,9 +983,9 @@ function renderHanajong(game) {
   const calculator = `<fieldset class="input-group"><legend>和了条件</legend><div class="calculator-grid">
         <label>自分の立場<select class="text-input" id="winner-role"><option value="child">子</option><option value="parent">親</option></select></label>
         <label>和了方法<select class="text-input" id="win-type"><option value="ron">ロン</option><option value="tsumo">ツモ</option></select></label>
-        <label>手牌<select class="text-input" id="hand-state"><option value="closed">門前</option><option value="open">鳴きあり</option></select></label>
+        <label>ポンした牌<select class="text-input" id="pon-tile">${renderPonOptions()}</select></label>
         <label>リーチ<select class="text-input" id="riichi-state"><option value="none">なし</option><option value="riichi">リーチ</option><option value="double">ダブルリーチ</option></select></label>
-      </div></fieldset>
+      </div><p class="helper-text pon-note">手牌で同じ牌を3枚選ぶと、ポンした牌を指定できます。</p></fieldset>
       <fieldset class="input-group"><legend>ドラ</legend><div class="calculator-grid dora-grid">
         <label>ドラの数<select class="text-input" id="dora-count">${Array.from({ length: 14 }, (_, index) => `<option value="${index}">${index}枚</option>`).join("")}</select></label>
         <label>裏ドラの数<select class="text-input" id="ura-dora-count">${Array.from({ length: 14 }, (_, index) => `<option value="${index}">${index}枚</option>`).join("")}</select></label>
@@ -997,8 +1037,12 @@ function renderHanajong(game) {
     button.addEventListener("click", () => removePlayer(button.dataset.removePlayer));
   });
   panel.querySelector("#record-round")?.addEventListener("click", recordRound);
-  ["#winner-role", "#win-type", "#hand-state", "#riichi-state", "#context-ippatsu", "#context-haitei", "#context-houtei", "#context-first-draw", "#dora-count", "#ura-dora-count", "#aka-dora-count", "#round-winner", "#round-parent"].forEach((selector) => {
+  ["#winner-role", "#win-type", "#riichi-state", "#context-ippatsu", "#context-haitei", "#context-houtei", "#context-first-draw", "#dora-count", "#ura-dora-count", "#aka-dora-count", "#round-winner", "#round-parent"].forEach((selector) => {
     panel.querySelector(selector)?.addEventListener("change", updateScorePreview);
+  });
+  panel.querySelector("#pon-tile")?.addEventListener("change", (event) => {
+    ponTileId = event.target.value;
+    updateScorePreview();
   });
   updateScorePreview();
 }
