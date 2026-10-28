@@ -533,6 +533,45 @@ h1 {
   background: #fff;
 }
 
+.open-kan-meld {
+  gap: 2px;
+}
+
+.open-kan-meld .open-pon-tile {
+  padding: 2px;
+}
+
+.open-meld-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.kan-kind-label {
+  align-self: center;
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.kan-tile-back {
+  display: grid;
+  width: 25px;
+  height: 46px;
+  place-items: center;
+  border: 1px solid #65776d;
+  border-radius: 5px;
+  background: #dce5dc;
+  color: #52645a;
+  font-size: 0.65rem;
+  font-weight: 800;
+}
+
+.concealed-kan-meld {
+  background: #f1f6ef;
+}
+
 .open-pon-tile {
   display: block;
   padding: 3px;

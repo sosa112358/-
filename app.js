@@ -121,6 +121,10 @@ let selectedHand = [];
 let winningTileIndex = null;
 let ponTileIds = [];
 let ponInputMode = false;
+let kanTileIds = [];
+let kanInputMode = false;
+let ankanTileIds = [];
+let ankanInputMode = false;
 
 function loadScoreState() {
   try {
@@ -471,17 +475,21 @@ function renderPlayerOptions(players, selectedIndex) {
 }
 
 function renderTilePicker() {
-  const concealedTarget = maxHandSize - ponTileIds.length * 3;
+  const openMeldCount = ponTileIds.length + kanTileIds.length;
+  const meldCount = openMeldCount + ankanTileIds.length;
+  const concealedTarget = maxHandSize - meldCount * 3;
   const tileCounts = selectedHand.reduce((counts, tileId) => {
     counts[tileId] = (counts[tileId] ?? 0) + 1;
     return counts;
   }, {});
   ponTileIds.forEach((tileId) => { tileCounts[tileId] = (tileCounts[tileId] ?? 0) + 3; });
+  kanTileIds.forEach((tileId) => { tileCounts[tileId] = (tileCounts[tileId] ?? 0) + 4; });
+  ankanTileIds.forEach((tileId) => { tileCounts[tileId] = (tileCounts[tileId] ?? 0) + 4; });
 
   return `
     <div class="tile-picker" id="tile-picker">
       <div class="section-heading">
-        <h4>手牌を選ぶ <span class="tile-count">${selectedHand.length}/${concealedTarget}枚${ponTileIds.length ? `（ポン${ponTileIds.length}組・合計${selectedHand.length + ponTileIds.length * 3}枚）` : ""}</span></h4>
+        <h4>手牌を選ぶ <span class="tile-count">${selectedHand.length}/${concealedTarget}枚${meldCount ? `（面子${meldCount}組・合計${selectedHand.length + ponTileIds.length * 3 + kanTileIds.length * 4 + ankanTileIds.length * 4}枚）` : ""}</span></h4>
         <p class="section-description">牌を押して手牌に追加します。「和了牌」で最後に引いた牌を指定できます。</p>
       </div>
       <div class="selected-hand" aria-label="選択中の手牌">
@@ -492,16 +500,28 @@ function renderTilePicker() {
             }).join("")
           : `<span class="hand-placeholder">ここに選んだ牌が並びます</span>`}
       </div>
-      <div class="open-meld-area" aria-label="ポンの入力">
-        <div class="open-meld-heading"><strong>副露</strong><span>${ponTileIds.length ? `${ponTileIds.length}組のポン` : "ポンなし"}</span></div>
+      <div class="open-meld-area" aria-label="面子の入力">
+        <div class="open-meld-heading"><strong>面子</strong><span>${meldCount ? `ポン${ponTileIds.length}組・明槓${kanTileIds.length}組・暗槓${ankanTileIds.length}組` : "なし"}</span></div>
         ${ponTileIds.map((tileId, meldIndex) => {
           const ponTile = hanajongTiles.find((tile) => tile.id === tileId);
           return `<div class="open-pon-meld" aria-label="${escapeHtml(ponTile.label)}をポンした3枚">${Array.from({ length: 3 }, (_, index) => `<span class="open-pon-tile ${index === 2 ? "called-tile" : ""}">${renderTileFace(ponTile)}</span>`).join("")}<button class="small-button" data-clear-pon="${meldIndex}" type="button" aria-label="このポンを解除">解除</button></div>`;
         }).join("")}
-        <button class="secondary-button pon-mode-button ${ponInputMode ? "is-active" : ""}" id="pon-mode" type="button" aria-pressed="${ponInputMode}" ${ponTileIds.length >= 3 ? "disabled" : ""}>${ponInputMode ? "ポンする牌を選択中" : "ポンを追加"}</button>
-        <p class="helper-text">「ポン」を押し、牌一覧からポンした牌を選択します。</p>
+        ${kanTileIds.map((tileId, meldIndex) => {
+          const kanTile = hanajongTiles.find((tile) => tile.id === tileId);
+          return `<div class="open-pon-meld open-kan-meld" aria-label="${escapeHtml(kanTile.label)}の明槓・鳴き">${Array.from({ length: 4 }, (_, index) => `<span class="open-pon-tile ${index === 3 ? "called-tile" : ""}">${renderTileFace(kanTile)}</span>`).join("")}<span class="kan-kind-label">明槓・鳴き</span><button class="small-button" data-clear-kan="${meldIndex}" type="button" aria-label="この明槓を解除">解除</button></div>`;
+        }).join("")}
+        ${ankanTileIds.map((tileId, meldIndex) => {
+          const kanTile = hanajongTiles.find((tile) => tile.id === tileId);
+          return `<div class="open-pon-meld open-kan-meld concealed-kan-meld" aria-label="${escapeHtml(kanTile.label)}の暗槓・門前">${Array.from({ length: 4 }, (_, index) => index === 0 || index === 3 ? `<span class="kan-tile-back" aria-label="伏せ牌">裏</span>` : `<span class="open-pon-tile">${renderTileFace(kanTile)}</span>`).join("")}<span class="kan-kind-label">暗槓・門前</span><button class="small-button" data-clear-ankan="${meldIndex}" type="button" aria-label="この暗槓を解除">解除</button></div>`;
+        }).join("")}
+        <div class="open-meld-actions">
+          <button class="secondary-button pon-mode-button ${ponInputMode ? "is-active" : ""}" id="pon-mode" type="button" aria-pressed="${ponInputMode}" ${meldCount >= 3 ? "disabled" : ""}>${ponInputMode ? "ポンする牌を選択中" : "ポンを追加"}</button>
+          <button class="secondary-button pon-mode-button ${kanInputMode ? "is-active" : ""}" id="kan-mode" type="button" aria-pressed="${kanInputMode}" ${meldCount >= 3 ? "disabled" : ""}>${kanInputMode ? "明槓する牌を選択中" : "明槓を追加"}</button>
+          <button class="secondary-button pon-mode-button ${ankanInputMode ? "is-active" : ""}" id="ankan-mode" type="button" aria-pressed="${ankanInputMode}" ${meldCount >= 3 ? "disabled" : ""}>${ankanInputMode ? "暗槓する牌を選択中" : "暗槓を追加"}</button>
+        </div>
+        <p class="helper-text">明槓は手牌の同じ牌3枚を選ぶか、ポンした牌を選んで登録します。暗槓は手牌の同じ牌3枚を選び、門前のまま扱います。</p>
       </div>
-      <div class="tile-picker-actions"><button class="secondary-button" id="clear-hand" type="button" title="Ctrl + Backspace" ${selectedHand.length || ponTileIds.length ? "" : "disabled"}>手牌をクリア</button><button class="secondary-button" id="random-hand" type="button" title="Shift + D">和了形をランダム入力</button></div>
+      <div class="tile-picker-actions"><button class="secondary-button" id="clear-hand" type="button" title="Ctrl + Backspace" ${selectedHand.length || meldCount ? "" : "disabled"}>手牌をクリア</button><button class="secondary-button" id="random-hand" type="button" title="Shift + D">和了形をランダム入力</button></div>
       <div class="tile-palette" aria-label="牌一覧">
         ${hanajongTileGroups.map((group) => `
           <section class="tile-family">
@@ -510,11 +530,14 @@ function renderTilePicker() {
               ${group.tiles.map((tile) => {
                 const count = tileCounts[tile.id] ?? 0;
                 const concealedCount = selectedHand.filter((selectedTileId) => selectedTileId === tile.id).length;
-                const currentPonCount = ponTileIds.filter((ponTileId) => ponTileId === tile.id).length * 3;
+                const currentPonCount = ponTileIds.filter((ponTileId) => ponTileId === tile.id).length * 3 + kanTileIds.filter((kanTileId) => kanTileId === tile.id).length * 4 + ankanTileIds.filter((ankanTileId) => ankanTileId === tile.id).length * 4;
                 const canMoveTriplet = ponInputMode && concealedCount >= 3 && currentPonCount === 0;
-                const canEnterPon = ponInputMode && selectedHand.length <= concealedTarget - 3 && concealedCount + currentPonCount <= 1;
-                const disabled = ponInputMode
-                  ? !(canMoveTriplet || canEnterPon)
+                const canEnterPon = ponInputMode && selectedHand.length <= concealedTarget - 3 && count <= 1;
+                const canMoveQuad = kanInputMode && concealedCount >= 3 && currentPonCount === 0;
+        const canEnterKan = kanInputMode && ponTileIds.includes(tile.id);
+                const canMoveAnkan = ankanInputMode && concealedCount >= 3 && currentPonCount === 0;
+                const disabled = (ponInputMode || kanInputMode || ankanInputMode)
+                  ? (ponInputMode ? !(canMoveTriplet || canEnterPon) : kanInputMode ? !(canMoveQuad || canEnterKan) : !canMoveAnkan)
                   : count >= 4 || selectedHand.length >= concealedTarget;
                 return `<button class="tile-button palette-tile" type="button" data-add-tile="${tile.id}" aria-label="${tile.label}を手牌に追加、選択済み${count}枚" ${disabled ? "disabled" : ""}>${renderTileFace(tile)}<span class="tile-quantity">${count}/4枚</span></button>`;
               }).join("")}
@@ -540,18 +563,54 @@ function updateTilePicker() {
     selectedHand = [];
     winningTileIndex = null;
     ponTileIds = [];
+    kanTileIds = [];
+    ankanTileIds = [];
     ponInputMode = false;
+    kanInputMode = false;
+    ankanInputMode = false;
     updateTilePicker();
   });
   panel.querySelector("#pon-mode")?.addEventListener("click", () => {
-    if (ponTileIds.length >= 3) return;
+    if (ponTileIds.length + kanTileIds.length + ankanTileIds.length >= 3) return;
     ponInputMode = !ponInputMode;
+    kanInputMode = false;
+    ankanInputMode = false;
+    updateTilePicker();
+  });
+  panel.querySelector("#kan-mode")?.addEventListener("click", () => {
+    if (ponTileIds.length + kanTileIds.length + ankanTileIds.length >= 3) return;
+    kanInputMode = !kanInputMode;
+    ponInputMode = false;
+    ankanInputMode = false;
+    updateTilePicker();
+  });
+  panel.querySelector("#ankan-mode")?.addEventListener("click", () => {
+    if (ponTileIds.length + kanTileIds.length + ankanTileIds.length >= 3) return;
+    ankanInputMode = !ankanInputMode;
+    ponInputMode = false;
+    kanInputMode = false;
     updateTilePicker();
   });
   panel.querySelectorAll("[data-clear-pon]").forEach((button) => {
     button.addEventListener("click", () => {
       ponTileIds.splice(Number(button.dataset.clearPon), 1);
       ponInputMode = false;
+      kanInputMode = false;
+      ankanInputMode = false;
+      updateTilePicker();
+    });
+  });
+  panel.querySelectorAll("[data-clear-kan]").forEach((button) => {
+    button.addEventListener("click", () => {
+      kanTileIds.splice(Number(button.dataset.clearKan), 1);
+      kanInputMode = false;
+      updateTilePicker();
+    });
+  });
+  panel.querySelectorAll("[data-clear-ankan]").forEach((button) => {
+    button.addEventListener("click", () => {
+      ankanTileIds.splice(Number(button.dataset.clearAnkan), 1);
+      ankanInputMode = false;
       updateTilePicker();
     });
   });
@@ -559,13 +618,46 @@ function updateTilePicker() {
     selectedHand = createRandomWinningHand();
     winningTileIndex = selectedHand.length - 1;
     ponTileIds = [];
+    kanTileIds = [];
+    ankanTileIds = [];
     ponInputMode = false;
+    kanInputMode = false;
+    ankanInputMode = false;
     updateTilePicker();
   });
   panel.querySelectorAll("[data-add-tile]").forEach((button) => {
     button.addEventListener("click", () => {
       const tileId = button.dataset.addTile;
       const count = selectedHand.filter((selectedTileId) => selectedTileId === tileId).length;
+      if (kanInputMode) {
+        const ponIndex = ponTileIds.indexOf(tileId);
+        if (ponIndex >= 0) {
+          ponTileIds.splice(ponIndex, 1);
+          kanTileIds.push(tileId);
+        } else if (count >= 3) {
+          const indices = selectedHand.flatMap((id, index) => id === tileId ? [index] : []).slice(0, 3);
+          const removedBeforeWinningTile = indices.filter((index) => index < winningTileIndex).length;
+          if (indices.includes(winningTileIndex)) winningTileIndex = null;
+          else if (winningTileIndex !== null) winningTileIndex -= removedBeforeWinningTile;
+          selectedHand = selectedHand.filter((_, index) => !indices.includes(index));
+          kanTileIds.push(tileId);
+        } else return;
+        kanInputMode = false;
+        updateTilePicker();
+        return;
+      }
+      if (ankanInputMode) {
+        if (count < 3) return;
+        const indices = selectedHand.flatMap((id, index) => id === tileId ? [index] : []).slice(0, 3);
+        const removedBeforeWinningTile = indices.filter((index) => index < winningTileIndex).length;
+        if (indices.includes(winningTileIndex)) winningTileIndex = null;
+        else if (winningTileIndex !== null) winningTileIndex -= removedBeforeWinningTile;
+        selectedHand = selectedHand.filter((_, index) => !indices.includes(index));
+        ankanTileIds.push(tileId);
+        ankanInputMode = false;
+        updateTilePicker();
+        return;
+      }
       if (ponInputMode) {
         if (count >= 3) {
           const ponIndices = selectedHand.flatMap((selectedTileId, index) => selectedTileId === tileId ? [index] : []).slice(0, 3);
@@ -573,7 +665,7 @@ function updateTilePicker() {
           if (ponIndices.includes(winningTileIndex)) winningTileIndex = null;
           else if (winningTileIndex !== null) winningTileIndex -= removedBeforeWinningTile;
           selectedHand = selectedHand.filter((_, index) => !ponIndices.includes(index));
-        } else if (selectedHand.length > maxHandSize - ponTileIds.length * 3 - 3 || count + ponTileIds.filter((ponTileId) => ponTileId === tileId).length * 3 > 1) {
+        } else if (selectedHand.length > maxHandSize - (ponTileIds.length + kanTileIds.length + ankanTileIds.length) * 3 - 3 || count + ponTileIds.filter((ponTileId) => ponTileId === tileId).length * 3 + kanTileIds.filter((kanTileId) => kanTileId === tileId).length * 4 + ankanTileIds.filter((ankanTileId) => ankanTileId === tileId).length * 4 > 1) {
           return;
         }
         ponTileIds.push(tileId);
@@ -581,7 +673,7 @@ function updateTilePicker() {
         updateTilePicker();
         return;
       }
-      if (selectedHand.length >= maxHandSize - ponTileIds.length * 3 || count + ponTileIds.filter((ponTileId) => ponTileId === tileId).length * 3 >= 4) return;
+      if (selectedHand.length >= maxHandSize - (ponTileIds.length + kanTileIds.length + ankanTileIds.length) * 3 || count + ponTileIds.filter((ponTileId) => ponTileId === tileId).length * 3 + kanTileIds.filter((kanTileId) => kanTileId === tileId).length * 4 + ankanTileIds.filter((ankanTileId) => ankanTileId === tileId).length * 4 >= 4) return;
       selectedHand.push(tileId);
       winningTileIndex = selectedHand.length - 1;
       updateTilePicker();
@@ -632,7 +724,7 @@ function createRandomWinningHand() {
 }
 
 function getHandDecompositions() {
-  const completeHand = [...selectedHand, ...ponTileIds.flatMap((tileId) => [tileId, tileId, tileId])];
+  const completeHand = [...selectedHand, ...[...ponTileIds, ...kanTileIds, ...ankanTileIds].flatMap((tileId) => [tileId, tileId, tileId])];
   if (completeHand.length !== maxHandSize) return [];
   const counts = Array(25).fill(0);
   completeHand.forEach((tileId) => { counts[Number(tileId.slice(5)) - 1] += 1; });
@@ -665,7 +757,7 @@ function getHandDecompositions() {
 
 function analyzeHand() {
   const decompositions = getHandDecompositions();
-  const completeHand = [...selectedHand, ...ponTileIds.flatMap((tileId) => [tileId, tileId, tileId])];
+  const completeHand = [...selectedHand, ...[...ponTileIds, ...kanTileIds, ...ankanTileIds].flatMap((tileId) => [tileId, tileId, tileId])];
   const indices = completeHand.map((tileId) => Number(tileId.slice(5)) - 1);
   if (indices.length !== maxHandSize) return null;
   const counts = Array(25).fill(0);
@@ -674,7 +766,7 @@ function analyzeHand() {
   const isHonor = (tile) => tile >= 18;
   const rank = (tile) => tile % 9 + 1;
   const isTerminalOrHonor = (tile) => isHonor(tile) || rank(tile) === 1 || rank(tile) === 9;
-  const ponTileIndices = ponTileIds.map((tileId) => Number(tileId.slice(5)) - 1);
+  const ponTileIndices = [...ponTileIds, ...kanTileIds, ...ankanTileIds].map((tileId) => Number(tileId.slice(5)) - 1);
   const yakuValues = new Map(hanajongYaku.map(([name, , closedValue, openValue]) => [name, { closedValue, openValue }]));
 
   function evaluate(decomposition) {
@@ -683,7 +775,7 @@ function analyzeHand() {
     const { pair, melds } = decomposition;
     const ponMelds = ponTileIndices.map((tileIndex) => melds.find((meld) => meld.type === "triplet" && meld.tile === tileIndex));
     if (ponMelds.some((meld) => !meld)) return null;
-    const closed = ponTileIds.length === 0;
+    const closed = ponTileIds.length === 0 && kanTileIds.length === 0;
     const add = (name, multiplier = 1) => {
       const value = yakuValues.get(name);
       const han = (closed ? value?.closedValue : value?.openValue) ?? "不可";
@@ -753,14 +845,14 @@ function analyzeHand() {
   const evaluated = decompositions.map(evaluate).filter(Boolean);
   if (!evaluated.length) return null;
   const terminalHonorTypes = new Set(indices.filter(isTerminalOrHonor));
-  if (ponTileIds.length === 0 && terminalHonorTypes.size === 10 && indices.every(isTerminalOrHonor) && counts.some((count) => count === 2)) {
+  if (ponTileIds.length === 0 && kanTileIds.length === 0 && ankanTileIds.length === 0 && terminalHonorTypes.size === 10 && indices.every(isTerminalOrHonor) && counts.some((count) => count === 2)) {
     evaluated.push({ yaku: new Map([["コクシムソウ", "役満"]]), regularHan: 0, yakuman: 1 });
   }
   for (let suit = 0; suit < 2; suit += 1) {
     const start = suit * 9;
     const isChuuren = counts.slice(start, start + 9).every((count, index) => count === (index === 0 || index === 8 ? 2 : 1))
       && counts.every((count, index) => index >= start && index < start + 9 || count === 0);
-    if (ponTileIds.length === 0 && isChuuren) evaluated.push({ yaku: new Map([["チューレンポウトウ", "役満"]]), regularHan: 0, yakuman: 1 });
+    if (ponTileIds.length === 0 && kanTileIds.length === 0 && ankanTileIds.length === 0 && isChuuren) evaluated.push({ yaku: new Map([["チューレンポウトウ", "役満"]]), regularHan: 0, yakuman: 1 });
   }
   if (!evaluated.length) return null;
   evaluated.sort((a, b) => (b.yakuman ? b.yakuman * 100 : b.regularHan) - (a.yakuman ? a.yakuman * 100 : a.regularHan));
@@ -836,9 +928,9 @@ function updateScorePreview() {
   const preview = panel.querySelector("#score-preview");
   if (!preview) return;
   if (!result) {
-    const handTarget = maxHandSize - ponTileIds.length * 3;
+    const handTarget = maxHandSize - (ponTileIds.length + kanTileIds.length + ankanTileIds.length) * 3;
     const message = selectedHand.length < handTarget
-      ? `手牌を${handTarget}枚${ponTileIds.length ? "（ポン牌を除く）" : ""}選ぶと、役と翻数を自動判定します。`
+      ? `手牌を${handTarget}枚${ponTileIds.length + kanTileIds.length + ankanTileIds.length ? "（面子を除く）" : ""}選ぶと、役と翻数を自動判定します。`
       : getHandDecompositions().length
         ? "成立役が見つかりません。和了形か、リーチなどの状況設定を確認してください。"
         : "手牌が3面子1雀頭の形になっていません。牌の選択を確認してください。";
@@ -1126,14 +1218,22 @@ document.addEventListener("keydown", (event) => {
     selectedHand = [];
     winningTileIndex = null;
     ponTileIds = [];
+    kanTileIds = [];
+    ankanTileIds = [];
     ponInputMode = false;
+    kanInputMode = false;
+    ankanInputMode = false;
     updateTilePicker();
   } else if (event.shiftKey && event.key.toLowerCase() === "d") {
     event.preventDefault();
     selectedHand = createRandomWinningHand();
     winningTileIndex = selectedHand.length - 1;
     ponTileIds = [];
+    kanTileIds = [];
+    ankanTileIds = [];
     ponInputMode = false;
+    kanInputMode = false;
+    ankanInputMode = false;
     updateTilePicker();
   }
 });
