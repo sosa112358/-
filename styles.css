@@ -816,6 +816,16 @@ h1 {
   object-fit: cover;
 }
 
+.love-letter-gallery {
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+}
+
+.love-letter-card img {
+  aspect-ratio: 2 / 3;
+  object-fit: contain;
+  background: #f8edda;
+}
+
 .hanajong-art img {
   aspect-ratio: 27 / 44;
   object-fit: contain;

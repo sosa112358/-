@@ -34,6 +34,13 @@ const games = [
     description: "供給崩壊のルールを確認できます。",
     scoring: false,
   },
+  {
+    id: "love-letter",
+    name: "ラブレター",
+    icon: "♡",
+    description: "手札の効果を使い、姫に想いを届けるカードゲームです。",
+    scoring: false,
+  },
 ];
 
 const hanajongYaku = [
@@ -115,7 +122,8 @@ const storageKey = "card-game-scorebook-hanajong";
 const panel = document.querySelector("#game-panel");
 const tabs = [...document.querySelectorAll(".game-tab")];
 
-let selectedGame = "hanajong";
+const requestedGame = new URLSearchParams(window.location.search).get("game");
+let selectedGame = games.some((game) => game.id === requestedGame) ? requestedGame : "hanajong";
 let scoreState = loadScoreState();
 let selectedHand = [];
 let winningTileIndex = null;
@@ -186,6 +194,8 @@ function render() {
     renderDirectRules(game);
   } else if (game.id === "supply-collapse") {
     renderSupplyCollapseRules(game);
+  } else if (game.id === "love-letter") {
+    renderLoveLetterRules(game);
   } else {
     renderRulesPlaceholder(game);
   }
@@ -432,6 +442,59 @@ function renderLastContinueRules(game) {
       </div>
       <h3>ラウンド終了</h3>
       <p>ステージデッキのカードをすべて引き終えたらROUND CLEARです。次のラウンドを準備して同じ手順を繰り返します。</p>
+    </div>
+  `;
+}
+
+function renderLoveLetterRules(game) {
+  const cards = [
+    ["1soldier.png", "兵士", 5, "相手1人の手札を予想します。兵士以外のカード名を宣言し、当たればその相手は脱落します。"],
+    ["2clown.png", "道化", 2, "相手1人の手札を見ることができます。"],
+    ["3knight.png", "騎士", 2, "相手1人と手札の強さを比べ、弱い方が脱落します。"],
+    ["4priest.png", "僧侶", 2, "次の自分の手番まで、相手から受ける効果を無効にします。"],
+    ["5wizard.png", "魔術師", 2, "自分または相手1人の手札を捨てさせ、山札から引き直させます。"],
+    ["6general.png", "将軍", 1, "相手1人と手札を交換します。"],
+    ["7minister.png", "大臣", 1, "手札の強さの合計が12以上になったら脱落します。"],
+    ["8princess.png", "姫", 1, "捨て札にすると、ただちに脱落します。"],
+  ];
+
+  panel.innerHTML = `
+    <div class="panel-heading">
+      <div>
+        <h2>${escapeHtml(game.name)}</h2>
+        <p>${escapeHtml(game.description)}</p>
+      </div>
+      <span class="game-icon" aria-hidden="true">${escapeHtml(game.icon)}</span>
+    </div>
+    <div class="content-card rules-card">
+      <p><strong>人数:</strong> 2〜4人　<strong>カード:</strong> 16枚</p>
+      <h3>ゲームの準備</h3>
+      <ol>
+        <li>カード16枚をよく混ぜ、山札から1枚を裏向きのまま脇に置きます。このカードはこのゲームでは使いません。</li>
+        <li>2人プレイでは、さらに山札から3枚を脇に公開します。これらは手札にせず、推理の手がかりにします。</li>
+        <li>各プレイヤーに手札を1枚ずつ配ります。残りを山札にします。</li>
+      </ol>
+      <h3>手番の流れ</h3>
+      <ol>
+        <li>山札から1枚引き、手札2枚のうち1枚を選んで公開して捨てます。</li>
+        <li>捨てたカードの効果を解決します。対象を選ぶ効果では、僧侶の保護や脱落状況を確認します。</li>
+        <li>効果を解決したら次のプレイヤーの手番です。捨て札は順番が分かるよう公開したままにします。</li>
+      </ol>
+      <h3>カードの効果</h3>
+      <div class="card-gallery love-letter-gallery" aria-label="ラブレターのカードと効果">
+        ${cards.map(([file, label, count, description]) => `
+          <figure class="illustrated-card love-letter-card">
+            <img src="pdf-images/love-letter/${file}" alt="${escapeHtml(label)}のカード" loading="lazy">
+            <div class="illustrated-card-copy"><h4>${escapeHtml(label)} <span>×${count}</span></h4><p>${escapeHtml(description)}</p></div>
+          </figure>
+        `).join("")}
+      </div>
+      <h3>脱落とゲームの終了</h3>
+      <ul>
+        <li>カードの効果で脱落したプレイヤーは手札を公開し、捨て札に加えます。</li>
+        <li>効果解決後に最後まで残った1人が勝者です。</li>
+        <li>山札がなくなったら、残ったプレイヤーは手札を公開します。最も強いカードを持つ人が勝ち、同じ強さなら引き分けです。</li>
+      </ul>
     </div>
   `;
 }
@@ -986,21 +1049,15 @@ function renderScorebook() {
     <section class="score-section" aria-labelledby="scorebook-heading">
       <div class="section-heading">
         <h3 id="scorebook-heading">対局記録</h3>
-        <p class="section-description">プレイヤーを4人登録すると、計算した和了点をラウンドごとに記録できます。</p>
+        <p class="section-description">登録済みプレイヤーの得点をラウンドごとに記録します。</p>
       </div>
-      ${totals.length < 4 ? `
-        <form class="add-player-form" id="add-player-form">
-          <label class="visually-hidden" for="player-name">プレイヤー名</label>
-          <input class="text-input" id="player-name" name="name" maxlength="24" placeholder="プレイヤー名" required>
-          <button class="primary-button" type="submit">追加</button>
-        </form>` : `<p class="helper-text">プレイヤーは4人登録済みです。</p>`}
       ${totals.length ? `
         <div class="score-table-wrap"><table class="score-table">
           <thead><tr><th scope="col">プレイヤー</th><th scope="col">累計</th><th scope="col">操作</th></tr></thead>
           <tbody>${totals.map((player) => `<tr><th scope="row">${escapeHtml(player.name)}</th><td class="total-cell">${formatScore(player.total)} 点</td><td><button class="remove-button" type="button" data-remove-player="${escapeHtml(player.id)}">削除</button></td></tr>`).join("")}</tbody>
         </table></div>
         ${scoreState.rounds.length ? `<h4 class="round-history-heading">ラウンド履歴</h4><ol class="round-history">${scoreState.rounds.map((round, index) => `<li><strong>${index + 1}局</strong><span>${escapeHtml(round.summary ?? "記録済み")}</span></li>`).join("")}</ol>` : `<p class="empty-state">まだラウンド記録がありません。</p>`}
-      ` : `<p class="empty-state">プレイヤーを登録して記録を始めましょう。</p>`}
+      ` : `<p class="empty-state">登録済みプレイヤーはいません。</p>`}
     </section>`;
 }
 
@@ -1169,7 +1226,6 @@ function renderHanajong(game) {
   `;
 
   updateTilePicker();
-  panel.querySelector("#add-player-form")?.addEventListener("submit", addPlayer);
   panel.querySelectorAll("[data-remove-player]").forEach((button) => {
     button.addEventListener("click", () => removePlayer(button.dataset.removePlayer));
   });
