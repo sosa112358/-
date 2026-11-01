@@ -852,15 +852,15 @@ function renderDirectRules(game) {
 
 function renderLastContinueRules(game) {
   const cards = [
-    ["last-continue-good-stage.jpg", "GOOD STAGE", "引いた人はGOOD効果を解決し、続けて自分のターンを行います。"],
-    ["last-continue-bad-stage.jpg", "BAD STAGE", "引いた人はBAD効果を受けます。基本は残機を1つ失い、その後、次のプレイヤーへ移ります。"],
+    ["last-continue-good-stage.jpg", "GOOD STAGE", "引いた人は続けて自分のターンを行います。"],
+    ["last-continue-bad-stage.jpg", "BAD STAGE", "引いた人は残機を1つ失い、その後、次のプレイヤーへ移ります。"],
     ["last-continue-debug.jpg", "DEBUG", "一番上のステージカードの内容を確認できます。"],
     ["last-continue-reset.jpg", "RESET", "自分または対戦相手1人を選び、その人の手持ちのアイテムをすべて山札に戻してシャッフルし、同じ枚数を引き直します。"],
     ["last-continue-save.jpg", "SAVE", "アイテムを1枚セットします。セット後、1周以内に残機が0になったら残機1で復活し、セットしたアイテムを回収します。未発動のまま1周するか、他のプレイヤーがSAVEを使うと、セットしたアイテムは失われます。"],
     ["last-continue-1up.jpg", "1UP", "残機を1つ増やします。残機は最大3です。"],
     ["last-continue-continue.jpg", "CONTINUE", "このカードを出した状態でBAD STAGEを引いた場合、残機の減少を無効にし、自分のターンを続けます。"],
     ["last-continue-glitch.jpg", "GLITCH", "このターンに引くステージカードの結果を反転します。GOODはBADに、BADはGOODになります。"],
-    ["last-continue-heart.jpg", "残機（ハート）", "ゲーム開始時の残機は各プレイヤー3です。"],
+    ["last-continue-heart.jpg", "HEART", "ゲーム開始時、残機は各プレイヤー3です。"],
   ];
 
   panel.innerHTML = `
