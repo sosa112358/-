@@ -5,8 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#f5f3ed">
     <title>カードゲーム得点帳</title>
-    <link rel="stylesheet" href="styles.css?v=20261030-2">
-    <script src="app.js?v=20261030-2" defer></script>
+    <link rel="stylesheet" href="styles.css?v=20261030-5">
+    <script src="furigana-readings.js?v=20261030-5" defer></script>
+    <script src="app.js?v=20261030-5" defer></script>
   </head>
   <body>
     <main class="app-shell">
@@ -16,6 +17,10 @@
           <h1>カードゲーム得点帳</h1>
           <p class="intro">遊ぶゲームを選んで、ルールやスコアを確認しましょう。</p>
         </div>
+        <label class="furigana-toggle">
+          <input id="furigana-toggle" type="checkbox" checked>
+          <span>ふりがなを表示</span>
+        </label>
       </header>
 
       <nav class="game-tabs" aria-label="ゲームを選択">
