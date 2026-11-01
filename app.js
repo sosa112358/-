@@ -898,9 +898,9 @@ function renderLastContinueRules(game) {
       </ul>
       <h3>ステージカードの結果</h3>
       <ul>
-        <li><strong>GOOD STAGE：</strong>引いた人がGOOD効果を解決し、その人のターンが続きます。</li>
-        <li><strong>BAD STAGE：</strong>引いた人がBAD効果を解決します。基本は残機を1つ失い、その後、次のプレイヤーへ移ります。</li>
-        <li>他の人に引かせた場合、GOODならその人のターンが続き、BADならその人が効果を受けて次のプレイヤーへ移ります。引かせた側のターンには戻りません。</li>
+        <li><strong>GOOD STAGE：</strong>引いた人のターンが続きます。</li>
+        <li><strong>BAD STAGE：</strong>引いた人は残機を1つ失い、その後、次のプレイヤーへ移ります。</li>
+        <li>他の人に引かせた場合、GOOD・BADどちらでも次のプレイヤーへ移ります。</li>
       </ul>
       <h3>アイテム</h3>
       <p>アイテムは基本的に自分のターンに使います。使用したアイテムは捨て札になります。</p>
