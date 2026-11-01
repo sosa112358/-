@@ -30,7 +30,7 @@ jobs:
       - name: Prepare site files
         run: |
           mkdir -p _site/pdf-images
-          cp index.html app.js styles.css _site/
+          cp index.html app.js styles.css furigana-readings.js _site/
           cp -R pdf-images/. _site/pdf-images/
           touch _site/.nojekyll
       - name: Upload site artifact
